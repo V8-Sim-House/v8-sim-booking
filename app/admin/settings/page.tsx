@@ -33,6 +33,7 @@ export default function SettingsPage() {
         hourly_rate: config.hourly_rate,
         setup_fee: config.setup_fee,
         deposit_percent: config.deposit_percent,
+        travel_buffer_hours: config.travel_buffer_hours,
         updated_at: new Date().toISOString(),
       })
       .eq("id", config.id);
@@ -65,7 +66,7 @@ export default function SettingsPage() {
         {config && (
           <div className="v8-card p-6">
             <h2 className="text-xs uppercase tracking-widest text-brand-text-muted font-semibold mb-6">Pricing Configuration</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <div>
                 <label className="block text-xs uppercase tracking-widest text-brand-text-muted font-semibold mb-2">
                   Hourly Rate (Custom)
@@ -111,6 +112,24 @@ export default function SettingsPage() {
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-text-muted">%</span>
                 </div>
+              </div>
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-brand-text-muted font-semibold mb-2">
+                  Travel Buffer
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="4"
+                    step="0.5"
+                    value={config.travel_buffer_hours}
+                    onChange={(e) => setConfig({ ...config, travel_buffer_hours: parseFloat(e.target.value) })}
+                    className="v8-input pr-12"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-text-muted text-sm">hrs</span>
+                </div>
+                <p className="text-xs text-brand-text-muted mt-1">Blocked before &amp; after each booking for travel/setup.</p>
               </div>
             </div>
             <p className="text-xs text-brand-text-muted mb-4">

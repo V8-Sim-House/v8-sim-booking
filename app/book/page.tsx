@@ -76,6 +76,7 @@ export default function BookPage() {
       : null;
 
   const selectedPackage = packages.find((p) => p.key === formState.packageKey) ?? null;
+  const durationHours = selectedPackage ? selectedPackage.hours : formState.customHours;
 
   const handleSuccess = (bookingId: string) => {
     router.push(`/book/success?id=${bookingId}`);
@@ -135,6 +136,7 @@ export default function BookPage() {
               {step === 3 && (
                 <Step3Details
                   formState={formState}
+                  durationHours={durationHours}
                   onUpdate={updateForm}
                   onNext={() => setStep(4)}
                   onBack={() => setStep(2)}

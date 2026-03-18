@@ -1,19 +1,122 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { BookingFormState } from "@/types/booking";
 import DatePicker from "./DatePicker";
 import AddressAutocomplete from "./AddressAutocomplete";
 
+interface BookingSlot {
+  date: string;
+  startTime: string; // "HH:MM"
+  durationHours: number;
+}
+
+interface AvailabilityData {
+  bookings: BookingSlot[];
+  travelBufferHours: number;
+}
+
+// Generate all 15-min time slots between 08:00 and 22:00
+function generateSlots() {
+  const slots: { value: string; label: string }[] = [];
+  for (let mins = 8 * 60; mins <= 22 * 60; mins += 15) {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    const value = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+    const period = h < 12 ? "AM" : "PM";
+    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    const label = `${h12}:${String(m).padStart(2, "0")} ${period}`;
+    slots.push({ value, label });
+  }
+  return slots;
+}
+
+const ALL_SLOTS = generateSlots();
+
+function toMins(time: string) {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function isSlotBlocked(
+  slotMins: number,
+  durationMins: number,
+  booking: BookingSlot,
+  bufferMins: number
+): boolean {
+  const bStart = toMins(booking.startTime);
+  const bEnd = bStart + booking.durationHours * 60;
+  // User's session [slotMins, slotMins+durationMins] must not overlap
+  // with the existing booking's buffered window [bStart-bufferMins, bEnd+bufferMins]
+  return slotMins < bEnd + bufferMins && slotMins + durationMins > bStart - bufferMins;
+}
+
 interface Props {
   formState: BookingFormState;
+  durationHours: number;
   onUpdate: (updates: Partial<BookingFormState>) => void;
   onNext: () => void;
   onBack: () => void;
 }
 
-export default function Step3Details({ formState, onUpdate, onNext, onBack }: Props) {
+export default function Step3Details({ formState, durationHours, onUpdate, onNext, onBack }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [availability, setAvailability] = useState<AvailabilityData | null>(null);
+  const [availLoading, setAvailLoading] = useState(false);
   const hasGenerator = formState.selectedAddons.some((a) => a.key === "generator");
+
+  const fetchAvailability = useCallback(async () => {
+    setAvailLoading(true);
+    try {
+      const res = await fetch("/api/bookings/availability");
+      if (res.ok) setAvailability(await res.json());
+    } finally {
+      setAvailLoading(false);
+    }
+  }, []);
+
+  // Fetch availability once on mount
+  useEffect(() => { fetchAvailability(); }, [fetchAvailability]);
+
+  // Re-clear selected time if it becomes blocked after a date change
+  useEffect(() => {
+    if (!formState.eventTime || !formState.eventDate || !availability) return;
+    const slotMins = toMins(formState.eventTime);
+    const durationMins = durationHours * 60;
+    const bufferMins = availability.travelBufferHours * 60;
+    const bookingsOnDate = availability.bookings.filter((b) => b.date === formState.eventDate);
+    const blocked = bookingsOnDate.some((b) => isSlotBlocked(slotMins, durationMins, b, bufferMins));
+    if (blocked) onUpdate({ eventTime: "" });
+  }, [formState.eventDate, availability, durationHours]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const getBlockedSlots = (): Set<string> => {
+    if (!availability || !formState.eventDate) return new Set();
+    const bookingsOnDate = availability.bookings.filter((b) => b.date === formState.eventDate);
+    if (bookingsOnDate.length === 0) return new Set();
+    const durationMins = durationHours * 60;
+    const bufferMins = availability.travelBufferHours * 60;
+    const blocked = new Set<string>();
+    for (const slot of ALL_SLOTS) {
+      const slotMins = toMins(slot.value);
+      // Also block if event would run past 10pm
+      if (slotMins + durationMins > 22 * 60) {
+        blocked.add(slot.value);
+        continue;
+      }
+      if (bookingsOnDate.some((b) => isSlotBlocked(slotMins, durationMins, b, bufferMins))) {
+        blocked.add(slot.value);
+      }
+    }
+    return blocked;
+  };
+
+  const blockedSlots = getBlockedSlots();
+  // Late-night slots always blocked regardless of date (past 10pm - duration)
+  const endOfDayBlockedSlots = new Set(
+    ALL_SLOTS.filter((s) => toMins(s.value) + durationHours * 60 > 22 * 60).map((s) => s.value)
+  );
+  const allBlockedSlots = formState.eventDate
+    ? blockedSlots
+    : endOfDayBlockedSlots;
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -56,32 +159,60 @@ export default function Step3Details({ formState, onUpdate, onNext, onBack }: Pr
           </label>
           <DatePicker
             value={formState.eventDate}
-            onChange={(date) => onUpdate({ eventDate: date })}
+            onChange={(date) => onUpdate({ eventDate: date, eventTime: "" })}
           />
           {errors.eventDate && <p className="text-red-400 text-xs mt-1">{errors.eventDate}</p>}
         </div>
+
         <div>
           <label className="block text-xs uppercase tracking-widest text-brand-text-muted font-semibold mb-2">
             Start Time *
           </label>
-          <select
-            className="v8-input"
-            value={formState.eventTime}
-            onChange={(e) => onUpdate({ eventTime: e.target.value })}
-          >
-            <option value="" style={{ background: "#111" }}>Select a time...</option>
-            {Array.from({ length: (22 - 8) * 4 + 1 }, (_, i) => {
-              const totalMins = 8 * 60 + i * 15;
-              const h = Math.floor(totalMins / 60);
-              const m = totalMins % 60;
-              const value = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-              const period = h < 12 ? "AM" : "PM";
-              const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-              const label = `${h12}:${String(m).padStart(2, "0")} ${period}`;
-              return <option key={value} value={value} style={{ background: "#111" }}>{label}</option>;
-            })}
-          </select>
+          <div className="bg-brand-dark-surface border border-brand-border-subtle rounded-md p-3 min-h-[50px]">
+            {!formState.eventDate ? (
+              <p className="text-brand-text-muted text-sm text-center py-2">Select a date first</p>
+            ) : availLoading ? (
+              <div className="flex items-center justify-center py-2 gap-2">
+                <svg className="w-4 h-4 animate-spin text-brand-red" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <span className="text-brand-text-muted text-xs">Checking availability…</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-1 max-h-56 overflow-y-auto pr-1">
+                {ALL_SLOTS.map((slot) => {
+                  const blocked = allBlockedSlots.has(slot.value);
+                  const selected = formState.eventTime === slot.value;
+                  return (
+                    <button
+                      key={slot.value}
+                      type="button"
+                      disabled={blocked}
+                      onClick={() => !blocked && onUpdate({ eventTime: slot.value })}
+                      className={[
+                        "text-xs rounded px-1 py-1.5 text-center transition-colors duration-150",
+                        blocked
+                          ? "opacity-25 cursor-not-allowed line-through text-brand-text-muted"
+                          : selected
+                          ? "bg-brand-red text-white font-semibold"
+                          : "text-brand-text hover:bg-brand-red/20 hover:text-brand-text cursor-pointer",
+                      ].join(" ")}
+                    >
+                      {slot.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
           {errors.eventTime && <p className="text-red-400 text-xs mt-1">{errors.eventTime}</p>}
+          {formState.eventDate && !availLoading && availability && (
+            <p className="text-brand-text-muted text-xs mt-1">
+              Grayed slots are unavailable or conflict with existing bookings
+              {availability.travelBufferHours > 0 && ` (incl. ${availability.travelBufferHours}h travel buffer)`}.
+            </p>
+          )}
         </div>
       </div>
 
