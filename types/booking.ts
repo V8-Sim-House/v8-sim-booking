@@ -86,6 +86,7 @@ export interface SimPricingConfig {
   hourly_rate: number;
   setup_fee: number;
   deposit_percent: number;
+  travel_buffer_hours: number;
   updated_at: string;
 }
 
