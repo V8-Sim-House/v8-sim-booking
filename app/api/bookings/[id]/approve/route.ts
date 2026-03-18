@@ -41,8 +41,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         amount: remainderCents,
         currency: "usd",
         capture_method: "manual",
+        customer: pi.customer as string,
         payment_method: pi.payment_method as string,
-        confirm: false,
+        off_session: true,
+        confirm: true,
         description: `V8 Sim remainder — booking #${params.id.slice(0, 8)}`,
         metadata: { booking_id: params.id },
       });

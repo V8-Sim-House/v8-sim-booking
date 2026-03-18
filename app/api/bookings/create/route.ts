@@ -36,22 +36,31 @@ export async function POST(req: Request) {
       clientId = newClient.id;
     }
 
-    // 2. Create Stripe PaymentIntent (manual capture = authorize only)
+    // 2. Find or create Stripe Customer so the payment method can be saved for the remainder charge
+    const existingCustomers = await stripe.customers.list({ email: formState.email, limit: 1 });
+    const stripeCustomerId =
+      existingCustomers.data.length > 0
+        ? existingCustomers.data[0].id
+        : (await stripe.customers.create({ email: formState.email, name: formState.fullName })).id;
+
+    // 3. Create Stripe PaymentIntent (manual capture = authorize only)
     const depositInCents = Math.round(pricing.depositAmount * 100);
     const paymentIntent = await stripe.paymentIntents.create({
       amount: depositInCents,
       currency: "usd",
       capture_method: "manual",
+      customer: stripeCustomerId,
+      setup_future_usage: "off_session",
       description: `V8 Sim deposit — ${pricing.packageLabel} — ${formState.eventDate}`,
       metadata: { client_email: formState.email, event_date: formState.eventDate },
     });
 
-    // 3. Determine duration
+    // 4. Determine duration
     const durationHours = formState.packageKey === "custom"
       ? formState.customHours
       : (formState.selectedAddons.length > 0 ? formState.customHours : formState.customHours);
 
-    // 4. Insert booking
+    // 5. Insert booking
     const { data: booking, error: bookingError } = await db
       .from("sim_bookings")
       .insert({
@@ -84,7 +93,7 @@ export async function POST(req: Request) {
       throw new Error("Failed to create booking");
     }
 
-    // 5. Insert add-ons
+    // 6. Insert add-ons
     if (formState.selectedAddons.length > 0) {
       await db.from("sim_booking_addons").insert(
         formState.selectedAddons.map((a) => ({
@@ -96,7 +105,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 6. Send emails (fire and forget)
+    // 7. Send emails (fire and forget)
     const emailData = {
       clientName: formState.fullName,
       clientEmail: formState.email,

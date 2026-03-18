@@ -19,7 +19,17 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (booking.status !== "pending") return NextResponse.json({ error: "Booking is not pending" }, { status: 400 });
 
   try {
-    await stripe.paymentIntents.cancel(booking.stripe_payment_intent_id);
+    const pi = await stripe.paymentIntents.retrieve(booking.stripe_payment_intent_id);
+
+    if (pi.status === "succeeded") {
+      // Already captured — issue a full refund instead of canceling
+      await stripe.refunds.create({ payment_intent: booking.stripe_payment_intent_id });
+    } else if (pi.status !== "canceled") {
+      // Still holds a hold or is in-flight — cancel to release it
+      await stripe.paymentIntents.cancel(booking.stripe_payment_intent_id);
+    }
+    // If already canceled, no Stripe action needed
+
     await db.from("sim_bookings").update({ status: "declined" }).eq("id", params.id);
 
     const client = booking.clients;
