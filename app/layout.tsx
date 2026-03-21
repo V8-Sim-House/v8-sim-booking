@@ -15,6 +15,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-E9E7Q1DVYQ"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-E9E7Q1DVYQ');
+            `,
+          }}
+        />
+      </head>
       <body className="antialiased">
         {children}
         <Toaster theme="dark" position="top-right" />
