@@ -1,4 +1,5 @@
 export type BookingStatus =
+  | "awaiting_payment"
   | "pending"
   | "approved"
   | "declined"

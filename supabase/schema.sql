@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS sim_bookings (
   id                              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   client_id                       uuid REFERENCES clients(id),
   status                          text CHECK (status IN (
+                                    'awaiting_payment',
                                     'pending',
                                     'approved',
                                     'declined',

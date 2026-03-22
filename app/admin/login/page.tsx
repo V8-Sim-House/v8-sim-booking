@@ -27,7 +27,7 @@ export default function AdminLoginPage() {
     <div className="min-h-screen bg-brand-black flex items-center justify-center px-6">
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
-          <Image src="/v8_logo_red.png" alt="V8 Sim" width={100} height={34} className="mx-auto mb-6 h-10 w-auto" />
+          <Image src="/v8_logo_red.png" alt="V8 Sim" width={100} height={34} className="mx-auto mb-6 h-10 w-auto" style={{ width: "auto" }} />
           <h1 className="text-2xl font-bold text-brand-text">Admin Login</h1>
           <p className="text-brand-text-muted text-sm mt-1">V8 Sim Booking System</p>
         </div>

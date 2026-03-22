@@ -25,7 +25,7 @@ export default function AdminNav() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
             <Link href="/admin/dashboard">
-              <Image src="/v8_logo_red.png" alt="V8 Sim" width={80} height={28} className="h-7 w-auto" />
+              <Image src="/v8_logo_red.png" alt="V8 Sim" width={80} height={28} className="h-7 w-auto" style={{ width: "auto" }} />
             </Link>
             <div className="flex items-center gap-1">
               {NAV.map((item) => (
