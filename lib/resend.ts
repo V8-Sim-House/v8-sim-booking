@@ -4,8 +4,8 @@ function getResend() {
   return new Resend(process.env.RESEND_API_KEY!);
 }
 
-const FROM = "V8 Sim <bookings@v8simhouse.com>";
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "bookings@v8simhouse.com";
+const FROM = "V8 Sim House <bookings@book.v8simhouse.com>";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "support@v8simhouse.com";
 
 interface BookingEmailData {
   clientName: string;
@@ -47,11 +47,11 @@ function baseTemplate(title: string, body: string) {
 </head>
 <body>
   <div class="container">
-    <div class="logo">V8 <span>Sim</span></div>
+    <div class="logo">V8 <span>Sim House</span></div>
     <h1>${title}</h1>
     ${body}
     <div class="footer">
-      <p>V8 Sim House LLC &middot; Connecticut, USA &middot; bookings@v8simhouse.com</p>
+      <p>V8 Sim House LLC &middot; Connecticut, USA &middot; support@v8simhouse.com</p>
     </div>
   </div>
 </body>
@@ -145,7 +145,7 @@ export async function sendBookingDeclined(data: Pick<BookingEmailData, "clientNa
       `<div class="card">
         <p>Hi ${data.clientName},</p>
         <p>Unfortunately, we are unable to confirm your booking request at this time. Your card authorization has been <strong>fully released</strong> - no charges were made.</p>
-        <p>If you would like to try a different date or have questions, please reach out at <a href="mailto:bookings@v8simhouse.com" style="color:#d32027;">bookings@v8simhouse.com</a>.</p>
+        <p>If you would like to try a different date or have questions, please reach out at <a href="mailto:support@v8simhouse.com" style="color:#d32027;">support@v8simhouse.com</a>.</p>
       </div>`
     ),
   });
@@ -162,7 +162,7 @@ export async function sendBookingCancelled(data: Pick<BookingEmailData, "clientN
         <p>Hi ${data.clientName},</p>
         <p>Your booking for <strong>${data.eventDate}</strong> has been cancelled.</p>
         <p>Please note that as per our policy, the deposit of <strong>${formatCurrency(data.depositAmount)}</strong> is non-refundable. No further charges will be made.</p>
-        <p>We hope to see you at a future event. Reach out anytime at <a href="mailto:bookings@v8simhouse.com" style="color:#d32027;">bookings@v8simhouse.com</a>.</p>
+        <p>We hope to see you at a future event. Reach out anytime at <a href="mailto:support@v8simhouse.com" style="color:#d32027;">support@v8simhouse.com</a>.</p>
       </div>`
     ),
   });

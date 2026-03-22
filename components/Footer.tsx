@@ -6,8 +6,8 @@ export default function Footer() {
           &copy; {new Date().getFullYear()} V8 Sim House LLC &mdash; Connecticut, USA
         </p>
         <p className="text-brand-text-muted text-xs mt-2">
-          <a href="mailto:bookings@v8simhouse.com" className="hover:text-brand-red transition-colors">
-            bookings@v8simhouse.com
+          <a href="mailto:support@v8simhouse.com" className="hover:text-brand-red transition-colors">
+            support@v8simhouse.com
           </a>
         </p>
       </div>

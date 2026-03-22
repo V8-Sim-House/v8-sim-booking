@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase";
-import {
-  sendBookingSubmittedClient,
-  sendBookingSubmittedAdmin,
-} from "@/lib/resend";
 import type { BookingFormState, PricingBreakdown } from "@/types/booking";
 
 export async function POST(req: Request) {
@@ -65,7 +61,7 @@ export async function POST(req: Request) {
       .from("sim_bookings")
       .insert({
         client_id: clientId,
-        status: "pending",
+        status: "awaiting_payment",
         event_date: formState.eventDate,
         event_time: formState.eventTime,
         duration_hours: durationHours,
@@ -105,23 +101,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // 7. Send emails (fire and forget)
-    const emailData = {
-      clientName: formState.fullName,
-      clientEmail: formState.email,
-      bookingId: booking.id,
-      eventDate: formState.eventDate,
-      eventTime: formState.eventTime,
-      packageLabel: pricing.packageLabel,
-      subtotal: pricing.subtotal,
-      depositAmount: pricing.depositAmount,
-      remainderAmount: pricing.remainderAmount,
-    };
-
-    Promise.all([
-      sendBookingSubmittedClient(emailData),
-      sendBookingSubmittedAdmin(emailData),
-    ]).catch(console.error);
+    // 7. Emails are sent via webhook (payment_intent.amount_capturable_updated)
+    //    after the card hold is confirmed — not here.
 
     return NextResponse.json({
       bookingId: booking.id,

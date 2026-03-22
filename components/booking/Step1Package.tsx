@@ -103,9 +103,12 @@ export default function Step1Package({ packages, config, formState, onUpdate, on
         })}
 
         {/* Custom package */}
-        <button
+        <div
+          role="button"
+          tabIndex={0}
           onClick={handleCustomSelect}
-          className={`v8-selectable text-left w-full ${formState.packageKey === "custom" ? "selected" : ""}`}
+          onKeyDown={(e) => e.key === "Enter" && handleCustomSelect()}
+          className={`v8-selectable text-left w-full cursor-pointer ${formState.packageKey === "custom" ? "selected" : ""}`}
         >
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
@@ -150,7 +153,7 @@ export default function Step1Package({ packages, config, formState, onUpdate, on
               Selected
             </div>
           )}
-        </button>
+        </div>
       </div>
 
       <div className="pt-2">

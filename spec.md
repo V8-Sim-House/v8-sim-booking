@@ -150,5 +150,5 @@ All email templates are written in `lib/resend.ts`:
 1. **Silent failures** — all email calls use fire-and-forget `.catch(console.error)`. If Resend rejects (wrong API key, unverified domain, bad address), the error is swallowed and the booking flow continues silently. Need to surface errors or at minimum log them properly.
 2. **`NEXT_PUBLIC_APP_URL` in admin email** — the "Review Booking" button in the admin notification email uses this env var. Verify it is set correctly in production, otherwise the link is broken.
 3. **`sendEventReminder` is never triggered** — the day-before reminder template exists but there is no cron job or scheduled trigger calling it. Needs a scheduled route (Vercel Cron or similar) that runs daily and sends reminders for bookings happening the next day.
-4. **Resend domain verification** — confirm `v8simhouse.com` is verified in the Resend dashboard and the `FROM` address `bookings@v8simhouse.com` is authorized to send. Unverified domains silently fail or get blocked.
+4. **Resend domain verification** — confirm `v8simhouse.com` is verified in the Resend dashboard and the `FROM` address `bookings@book.v8simhouse.com` is authorized to send. Unverified domains silently fail or get blocked.
 5. **Test email delivery end-to-end** — trigger each email type manually and confirm receipt, check spam placement.
