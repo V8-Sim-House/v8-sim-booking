@@ -62,7 +62,7 @@ export async function sendBookingSubmittedClient(data: BookingEmailData) {
   return getResend().emails.send({
     from: FROM,
     to: data.clientEmail,
-    subject: "We received your booking request — V8 Sim",
+    subject: "We received your booking request — V8 Sim House",
     html: baseTemplate(
       "We got your request!",
       `<div class="card">
@@ -113,7 +113,7 @@ export async function sendBookingApproved(data: BookingEmailData) {
   return getResend().emails.send({
     from: FROM,
     to: data.clientEmail,
-    subject: "Your V8 Sim event is confirmed!",
+    subject: "Your V8 Sim booking is confirmed!",
     html: baseTemplate(
       "You are confirmed!",
       `<div class="card">
