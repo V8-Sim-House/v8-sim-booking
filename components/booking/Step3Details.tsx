@@ -125,6 +125,7 @@ export default function Step3Details({ formState, durationHours, onUpdate, onNex
     if (!formState.fullName.trim()) e.fullName = "Name is required";
     if (!formState.email.trim() || !/\S+@\S+\.\S+/.test(formState.email)) e.email = "Valid email is required";
     if (!formState.phone.trim()) e.phone = "Phone number is required";
+    else if (!/^\+?[\d\s\-().]{7,15}$/.test(formState.phone.trim())) e.phone = "Enter a valid phone number";
     if (!formState.address.trim()) e.address = "Address is required";
     if (!formState.city.trim()) e.city = "City is required";
     if (!formState.hasSpaceConfirmed) e.hasSpaceConfirmed = "Please confirm your venue has adequate space";
@@ -302,8 +303,8 @@ export default function Step3Details({ formState, durationHours, onUpdate, onNex
           <div>
             <p className="text-brand-text font-semibold text-sm mb-1">Space Requirements</p>
             <p className="text-brand-text-muted text-sm leading-relaxed">
-              Our simulator requires a minimum space of <strong className="text-brand-text">20ft × 12ft</strong> with a{" "}
-              <strong className="text-brand-text">ceiling height of 8ft</strong>. Please ensure your venue meets these requirements.
+              Our simulator requires a minimum space of <strong className="text-brand-text">22ft × 12ft</strong> with a{" "}
+              <strong className="text-brand-text">ceiling height of 10ft</strong>. Please ensure your venue meets these requirements.
             </p>
           </div>
         </div>
@@ -319,7 +320,7 @@ export default function Step3Details({ formState, durationHours, onUpdate, onNex
             onChange={(e) => onUpdate({ hasSpaceConfirmed: e.target.checked })}
           />
           <span className="text-sm text-brand-text">
-            I confirm my venue has at least <strong>20ft × 12ft</strong> of clear space with <strong>8ft ceiling height</strong>
+            I confirm my venue has at least <strong>22ft × 12ft</strong> of clear space with <strong>10ft ceiling height</strong>
           </span>
         </label>
         {errors.hasSpaceConfirmed && <p className="text-red-400 text-xs ml-7">{errors.hasSpaceConfirmed}</p>}
