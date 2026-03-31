@@ -124,6 +124,16 @@ function CheckoutForm({ formState, pricing, onBack, onSuccess }: CheckoutFormPro
         </div>
       </div>
 
+      {/* Damage deposit notice */}
+      <div className="flex gap-3 rounded-lg border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-200 leading-relaxed">
+        <svg className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p>
+          <strong className="text-blue-100">Please Note:</strong> A refundable $300 damage deposit is collected on arrival via cash, card, or Zelle — prior to setup. This is returned to you in full at the end of the event provided no damage occurred.
+        </p>
+      </div>
+
       {/* Card input */}
       <div className="v8-card p-5">
         <h3 className="text-xs uppercase tracking-widest text-brand-text-muted font-semibold mb-4">

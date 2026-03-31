@@ -128,6 +128,8 @@ export default function Step3Details({ formState, durationHours, onUpdate, onNex
     else if (!/^\+?[\d\s\-().]{7,15}$/.test(formState.phone.trim())) e.phone = "Enter a valid phone number";
     if (!formState.address.trim()) e.address = "Address is required";
     if (!formState.city.trim()) e.city = "City is required";
+    if (!formState.zip.trim()) e.zip = "ZIP code is required";
+    else if (!/^\d{5}(-\d{4})?$/.test(formState.zip.trim())) e.zip = "Enter a valid ZIP code";
     if (!formState.hasSpaceConfirmed) e.hasSpaceConfirmed = "Please confirm your venue has adequate space";
     if (!hasGenerator && !formState.hasPowerConfirmed) e.hasPowerConfirmed = "Please confirm power availability";
     return e;
@@ -273,9 +275,10 @@ export default function Step3Details({ formState, durationHours, onUpdate, onNex
           </div>
           <div>
             <label className="block text-xs uppercase tracking-widest text-brand-text-muted font-semibold mb-2">
-              ZIP
+              ZIP *
             </label>
-            <input type="text" placeholder="06101" className="v8-input" {...field("zip")} />
+            <input type="text" placeholder="06101" maxLength={10} className="v8-input" {...field("zip")} />
+            {errors.zip && <p className="text-red-400 text-xs mt-1">{errors.zip}</p>}
           </div>
         </div>
       </div>
