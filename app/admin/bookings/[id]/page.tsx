@@ -230,6 +230,16 @@ export default function BookingDetailPage() {
               </div>
             </div>
 
+            {/* Damage deposit notice */}
+            <div className="flex gap-2.5 rounded-lg border border-blue-500/30 bg-blue-500/10 p-4 text-xs text-blue-200 leading-relaxed">
+              <svg className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p>
+                <strong className="text-blue-100">Damage Deposit:</strong> A refundable $300 deposit is collected on arrival (cash, card, or Zelle) prior to setup. Returned in full if no damage occurred.
+              </p>
+            </div>
+
             {/* Stripe */}
             <div className="v8-card p-5">
               <h2 className="text-xs uppercase tracking-widest text-brand-text-muted font-semibold mb-4">Stripe</h2>
