@@ -31,7 +31,7 @@ export async function POST(req: Request) {
         .eq("status", "awaiting_payment")
         .select(`
           id, event_date, event_time, package_type, subtotal,
-          deposit_amount, remainder_amount,
+          deposit_amount, remainder_amount, event_type, expected_guests,
           clients ( full_name, email )
         `)
         .single();
@@ -49,6 +49,8 @@ export async function POST(req: Request) {
           subtotal: booking.subtotal,
           depositAmount: booking.deposit_amount,
           remainderAmount: booking.remainder_amount,
+          eventType: booking.event_type ?? null,
+          expectedGuests: booking.expected_guests ?? null,
         };
         Promise.all([
           sendBookingSubmittedClient(emailData),

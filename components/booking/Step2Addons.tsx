@@ -10,9 +10,10 @@ interface Props {
   onUpdate: (updates: Partial<BookingFormState>) => void;
   onNext: () => void;
   onBack: () => void;
+  onSave: () => void;
 }
 
-export default function Step2Addons({ addons, formState, onUpdate, onNext, onBack }: Props) {
+export default function Step2Addons({ addons, formState, onUpdate, onNext, onBack, onSave }: Props) {
   // Determine hours for the current selection (for per-hour price display)
   const selectedPkg = formState.packageKey;
   const hours = selectedPkg === "custom" ? formState.customHours : (
@@ -92,8 +93,9 @@ export default function Step2Addons({ addons, formState, onUpdate, onNext, onBac
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row gap-3 pt-2">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
         <button onClick={onBack} className="btn-v8 w-full sm:w-auto">← Back</button>
+        <button onClick={onSave} type="button" className="btn-v8 w-full sm:w-auto sm:mx-auto">Save for Later</button>
         <button onClick={onNext} className="btn-v8-red w-full sm:w-auto">Continue to Details →</button>
       </div>
     </div>

@@ -91,7 +91,7 @@ export default function BookingDetailPage() {
               Booking #{id.slice(0, 8).toUpperCase()}
             </h1>
             <p className="text-brand-text-muted text-sm mt-1">
-              Created {new Date(booking.created_at).toLocaleDateString("en-US", { dateStyle: "long" })}
+              Submitted {new Date(booking.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} at {new Date(booking.created_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
             </p>
           </div>
           <StatusBadge status={status} />
@@ -144,6 +144,18 @@ export default function BookingDetailPage() {
                     {booking.client_address}, {booking.city}{booking.state ? `, ${booking.state}` : ""} {booking.zip ?? ""}
                   </p>
                 </div>
+                {booking.event_type && (
+                  <div>
+                    <p className="text-brand-text-muted text-xs mb-1">Event Type</p>
+                    <p className="text-brand-text font-semibold capitalize">{booking.event_type}</p>
+                  </div>
+                )}
+                {booking.expected_guests != null && (
+                  <div>
+                    <p className="text-brand-text-muted text-xs mb-1">Expected Guests</p>
+                    <p className="text-brand-text font-semibold">{booking.expected_guests}</p>
+                  </div>
+                )}
                 <div>
                   <p className="text-brand-text-muted text-xs mb-1">Space Confirmed</p>
                   <p className={booking.has_space_confirmed ? "text-green-400" : "text-red-400"}>

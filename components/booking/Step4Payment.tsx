@@ -19,9 +19,10 @@ interface CheckoutFormProps {
   selectedPackage: SimPackage | null;
   onBack: () => void;
   onSuccess: (bookingId: string) => void;
+  onSave: () => void;
 }
 
-function CheckoutForm({ formState, pricing, onBack, onSuccess }: CheckoutFormProps) {
+function CheckoutForm({ formState, pricing, onBack, onSuccess, onSave }: CheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
@@ -164,9 +165,12 @@ function CheckoutForm({ formState, pricing, onBack, onSuccess }: CheckoutFormPro
         <strong className="text-brand-text">Deposits are non-refundable.</strong>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 pt-2">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
         <button type="button" onClick={onBack} className="btn-v8 w-full sm:w-auto" disabled={submitting}>
           ← Back
+        </button>
+        <button type="button" onClick={onSave} className="btn-v8 w-full sm:w-auto sm:mx-auto" disabled={submitting}>
+          Save for Later
         </button>
         <button
           type="submit"
@@ -196,6 +200,7 @@ interface Props {
   selectedPackage: SimPackage | null;
   onBack: () => void;
   onSuccess: (bookingId: string) => void;
+  onSave: () => void;
 }
 
 export default function Step4Payment(props: Props) {

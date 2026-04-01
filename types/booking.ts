@@ -40,6 +40,8 @@ export interface SimBooking {
   zip: string | null;
   has_space_confirmed: boolean;
   has_power_confirmed: boolean;
+  event_type: string | null;
+  expected_guests: number | null;
   client_notes: string | null;
   admin_notes: string | null;
   stripe_payment_intent_id: string | null;
@@ -98,19 +100,36 @@ export interface BookingFormState {
   customHours: number;
   // Step 2
   selectedAddons: SimAddon[];
-  // Step 3
+  // From Step 0 (pre-filled, static in Step 3)
+  eventType: string;
   eventDate: string;
   eventTime: string;
   fullName: string;
   email: string;
+  // Step 3
   phone: string;
   address: string;
   city: string;
   state: string;
   zip: string;
   clientNotes: string;
+  expectedGuests: string;
   hasSpaceConfirmed: boolean;
   hasPowerConfirmed: boolean;
+}
+
+export interface SimLead {
+  id: string;
+  full_name: string;
+  email: string;
+  event_type: string;
+  event_date: string;
+  selected_package: string | null;
+  created_at: string;
+  pricing_email_sent_at: string | null;
+  reminder_3w_sent_at: string | null;
+  reminder_1w_sent_at: string | null;
+  converted_to_booking: boolean;
 }
 
 export interface PricingBreakdown {

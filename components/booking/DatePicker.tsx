@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   format, parseISO, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, isSameMonth, isSameDay, isToday, isBefore,
-  addMonths, subMonths, startOfDay,
+  addMonths, addDays, subMonths, startOfDay,
 } from "date-fns";
 
 interface Props {
@@ -19,7 +19,7 @@ export default function DatePicker({ value, onChange, minDate }: Props) {
   const selected = value ? parseISO(value) : null;
   const [viewMonth, setViewMonth] = useState(selected ?? new Date());
   const ref = useRef<HTMLDivElement>(null);
-  const min = minDate ?? startOfDay(new Date());
+  const min = minDate ?? addDays(startOfDay(new Date()), 1);
 
   // Close on outside click
   useEffect(() => {
@@ -61,7 +61,8 @@ export default function DatePicker({ value, onChange, minDate }: Props) {
             <button
               type="button"
               onClick={() => setViewMonth(subMonths(viewMonth, 1))}
-              className="w-8 h-8 flex items-center justify-center rounded-md text-brand-text-muted hover:text-brand-red hover:bg-brand-border-subtle transition-colors"
+              disabled={!isBefore(startOfMonth(min), startOfMonth(viewMonth))}
+              className="w-8 h-8 flex items-center justify-center rounded-md text-brand-text-muted hover:text-brand-red hover:bg-brand-border-subtle transition-colors disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:text-brand-text-muted disabled:hover:bg-transparent"
             >
               ‹
             </button>

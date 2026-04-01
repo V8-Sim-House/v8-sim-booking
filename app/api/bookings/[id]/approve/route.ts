@@ -11,7 +11,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const db = createAdminClient();
   const { data: booking } = await db
     .from("sim_bookings")
-    .select("*, clients(*)")
+    .select("*, clients(*), event_type, expected_guests")
     .eq("id", params.id)
     .single();
 
