@@ -109,8 +109,7 @@ export async function POST(req: Request) {
       .eq("email", formState.email)
       .eq("event_date", formState.eventDate)
       .eq("converted_to_booking", false)
-      .then(() => {})
-      .catch(console.error);
+      .then(undefined, console.error);
 
     // 8. Emails are sent via webhook (payment_intent.amount_capturable_updated)
     //    after the card hold is confirmed — not here.
