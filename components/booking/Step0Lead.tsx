@@ -86,20 +86,6 @@ function findAlternativeDates(targetDate: string, bookedDates: Set<string>, coun
     .sort();
 }
 
-function formatDisplayDate(dateStr: string) {
-  return format(parseISO(dateStr), "EEEE, MMMM d");
-}
-
-function formatShortDate(dateStr: string) {
-  return format(parseISO(dateStr), "EEE, MMM d");
-}
-
-function formatTime(timeStr: string) {
-  const [h, m] = timeStr.split(":").map(Number);
-  const period = h < 12 ? "AM" : "PM";
-  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-  return `${h12}:${String(m).padStart(2, "0")} ${period}`;
-}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -197,7 +183,6 @@ export default function Step0Lead({ initialData, onComplete }: Props) {
   const allBlockedSlots = new Set<string>();
 
   const resolvedEventType = eventTypeSelect === "Other" ? otherEventType.trim() : eventTypeSelect;
-  const canSubmit = isValid;
 
   const handleDateChange = (date: string) => {
     setEventDate(date);
@@ -205,11 +190,6 @@ export default function Step0Lead({ initialData, onComplete }: Props) {
     touch("eventDate");
   };
 
-  const handleAltDateClick = (date: string) => {
-    setEventDate(date);
-    // Keep current time selection — availability will recompute immediately
-    // (if that time is now blocked, the useEffect above will clear it)
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

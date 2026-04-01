@@ -109,7 +109,7 @@ export default function BookPage() {
       setLoading(false);
     }
     load();
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   const updateForm = (updates: Partial<BookingFormState>) => {
     setFormState((prev) => ({ ...prev, ...updates }));
