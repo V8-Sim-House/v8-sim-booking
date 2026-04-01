@@ -281,7 +281,6 @@ export default function BookPage() {
                     packages={packages}
                     config={config}
                     formState={formState}
-                    leadId={leadId}
                     onUpdate={updateForm}
                     onNext={() => setStep(2)}
                     onBack={() => setStep(0)}
