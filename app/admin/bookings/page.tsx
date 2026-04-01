@@ -108,7 +108,7 @@ export default function BookingsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-brand-border-subtle">
-                    {["Ref", "Client", "Date", "Package", "Total", "Deposit", "Status", ""].map((h) => (
+                    {["Ref", "Client", "Event Date", "Submitted", "Package", "Total", "Deposit", "Status", ""].map((h) => (
                       <th key={h} className="px-4 py-3 text-left text-xs uppercase tracking-widest text-brand-text-muted font-semibold">
                         {h}
                       </th>
@@ -126,6 +126,11 @@ export default function BookingsPage() {
                         <p className="text-brand-text-muted text-xs">{b.clients?.email}</p>
                       </td>
                       <td className="px-4 py-3 text-brand-text">{b.event_date}</td>
+                      <td className="px-4 py-3 text-brand-text-muted text-xs whitespace-nowrap">
+                        {new Date(b.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        <br />
+                        {new Date(b.created_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                      </td>
                       <td className="px-4 py-3 text-brand-text-muted capitalize">
                         {b.package_type?.replace(/_/g, " ")}
                       </td>

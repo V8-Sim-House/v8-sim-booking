@@ -124,6 +124,9 @@ export default function DashboardPage() {
                         <p className="font-semibold text-brand-text text-sm">{b.clients?.full_name}</p>
                         <p className="text-brand-text-muted text-xs">{b.event_date} · {b.package_type?.replace(/_/g, " ")}</p>
                         <p className="text-brand-text-muted text-xs">{formatCurrency(b.subtotal ?? 0)}</p>
+                        <p className="text-brand-text-muted text-xs mt-0.5 opacity-60">
+                          Submitted {new Date(b.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })} at {new Date(b.created_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                        </p>
                       </div>
                       <Link href={`/admin/bookings/${b.id}`} className="text-xs text-brand-red hover:underline shrink-0">
                         View →

@@ -79,6 +79,8 @@ export async function POST(req: Request) {
         has_space_confirmed: formState.hasSpaceConfirmed,
         has_power_confirmed: formState.hasPowerConfirmed || formState.selectedAddons.some((a) => a.key === "generator"),
         client_notes: formState.clientNotes || null,
+        event_type: formState.eventType || null,
+        expected_guests: formState.expectedGuests ? parseInt(formState.expectedGuests, 10) : null,
         stripe_payment_intent_id: paymentIntent.id,
       })
       .select("id")
@@ -101,7 +103,16 @@ export async function POST(req: Request) {
       );
     }
 
-    // 7. Emails are sent via webhook (payment_intent.amount_capturable_updated)
+    // 7. Mark matching lead as converted (fire and forget)
+    db.from("sim_leads")
+      .update({ converted_to_booking: true })
+      .eq("email", formState.email)
+      .eq("event_date", formState.eventDate)
+      .eq("converted_to_booking", false)
+      .then(() => {})
+      .catch(console.error);
+
+    // 8. Emails are sent via webhook (payment_intent.amount_capturable_updated)
     //    after the card hold is confirmed — not here.
 
     return NextResponse.json({

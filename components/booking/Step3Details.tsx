@@ -1,53 +1,22 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import type { BookingFormState } from "@/types/booking";
-import DatePicker from "./DatePicker";
 import AddressAutocomplete from "./AddressAutocomplete";
 
-interface BookingSlot {
-  date: string;
-  startTime: string; // "HH:MM"
-  durationHours: number;
+function formatDisplayDate(dateStr: string) {
+  if (!dateStr) return "—";
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+    weekday: "long", year: "numeric", month: "long", day: "numeric",
+  });
 }
 
-interface AvailabilityData {
-  bookings: BookingSlot[];
-  travelBufferHours: number;
-}
-
-// Generate all 15-min time slots between 08:00 and 22:00
-function generateSlots() {
-  const slots: { value: string; label: string }[] = [];
-  for (let mins = 8 * 60; mins <= 22 * 60; mins += 15) {
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    const value = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-    const period = h < 12 ? "AM" : "PM";
-    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-    const label = `${h12}:${String(m).padStart(2, "0")} ${period}`;
-    slots.push({ value, label });
-  }
-  return slots;
-}
-
-const ALL_SLOTS = generateSlots();
-
-function toMins(time: string) {
-  const [h, m] = time.split(":").map(Number);
-  return h * 60 + m;
-}
-
-function isSlotBlocked(
-  slotMins: number,
-  durationMins: number,
-  booking: BookingSlot,
-  bufferMins: number
-): boolean {
-  const bStart = toMins(booking.startTime);
-  const bEnd = bStart + booking.durationHours * 60;
-  // User's session [slotMins, slotMins+durationMins] must not overlap
-  // with the existing booking's buffered window [bStart-bufferMins, bEnd+bufferMins]
-  return slotMins < bEnd + bufferMins && slotMins + durationMins > bStart - bufferMins;
+function formatDisplayTime(timeStr: string) {
+  if (!timeStr) return "—";
+  const [h, m] = timeStr.split(":").map(Number);
+  const period = h < 12 ? "AM" : "PM";
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${h12}:${String(m).padStart(2, "0")} ${period}`;
 }
 
 interface Props {
@@ -56,74 +25,15 @@ interface Props {
   onUpdate: (updates: Partial<BookingFormState>) => void;
   onNext: () => void;
   onBack: () => void;
+  onSave: () => void;
 }
 
-export default function Step3Details({ formState, durationHours, onUpdate, onNext, onBack }: Props) {
+export default function Step3Details({ formState, onUpdate, onNext, onBack, onSave }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [availability, setAvailability] = useState<AvailabilityData | null>(null);
-  const [availLoading, setAvailLoading] = useState(false);
   const hasGenerator = formState.selectedAddons.some((a) => a.key === "generator");
-
-  const fetchAvailability = useCallback(async () => {
-    setAvailLoading(true);
-    try {
-      const res = await fetch("/api/bookings/availability");
-      if (res.ok) setAvailability(await res.json());
-    } finally {
-      setAvailLoading(false);
-    }
-  }, []);
-
-  // Fetch availability once on mount
-  useEffect(() => { fetchAvailability(); }, [fetchAvailability]);
-
-  // Re-clear selected time if it becomes blocked after a date change
-  useEffect(() => {
-    if (!formState.eventTime || !formState.eventDate || !availability) return;
-    const slotMins = toMins(formState.eventTime);
-    const durationMins = durationHours * 60;
-    const bufferMins = availability.travelBufferHours * 60;
-    const bookingsOnDate = availability.bookings.filter((b) => b.date === formState.eventDate);
-    const blocked = bookingsOnDate.some((b) => isSlotBlocked(slotMins, durationMins, b, bufferMins));
-    if (blocked) onUpdate({ eventTime: "" });
-  }, [formState.eventDate, availability, durationHours]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const getBlockedSlots = (): Set<string> => {
-    if (!availability || !formState.eventDate) return new Set();
-    const bookingsOnDate = availability.bookings.filter((b) => b.date === formState.eventDate);
-    if (bookingsOnDate.length === 0) return new Set();
-    const durationMins = durationHours * 60;
-    const bufferMins = availability.travelBufferHours * 60;
-    const blocked = new Set<string>();
-    for (const slot of ALL_SLOTS) {
-      const slotMins = toMins(slot.value);
-      // Also block if event would run past 10pm
-      if (slotMins + durationMins > 22 * 60) {
-        blocked.add(slot.value);
-        continue;
-      }
-      if (bookingsOnDate.some((b) => isSlotBlocked(slotMins, durationMins, b, bufferMins))) {
-        blocked.add(slot.value);
-      }
-    }
-    return blocked;
-  };
-
-  const blockedSlots = getBlockedSlots();
-  // Late-night slots always blocked regardless of date (past 10pm - duration)
-  const endOfDayBlockedSlots = new Set(
-    ALL_SLOTS.filter((s) => toMins(s.value) + durationHours * 60 > 22 * 60).map((s) => s.value)
-  );
-  const allBlockedSlots = formState.eventDate
-    ? blockedSlots
-    : endOfDayBlockedSlots;
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!formState.eventDate) e.eventDate = "Event date is required";
-    if (!formState.eventTime) e.eventTime = "Event time is required";
-    if (!formState.fullName.trim()) e.fullName = "Name is required";
-    if (!formState.email.trim() || !/\S+@\S+\.\S+/.test(formState.email)) e.email = "Valid email is required";
     if (!formState.phone.trim()) e.phone = "Phone number is required";
     else if (!/^\+?[\d\s\-().]{7,15}$/.test(formState.phone.trim())) e.phone = "Enter a valid phone number";
     if (!formState.address.trim()) e.address = "Address is required";
@@ -150,102 +60,65 @@ export default function Step3Details({ formState, durationHours, onUpdate, onNex
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-brand-text mb-1">Event Details & Location</h2>
-        <p className="text-brand-text-muted text-sm">Tell us about your event.</p>
+        <h2 className="text-2xl font-bold text-brand-text mb-1">Event Details &amp; Location</h2>
+        <p className="text-brand-text-muted text-sm">Confirm your event info and provide the location.</p>
       </div>
 
-      {/* Date & Time */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-xs uppercase tracking-widest text-brand-text-muted font-semibold mb-2">
-            Event Date *
-          </label>
-          <DatePicker
-            value={formState.eventDate}
-            onChange={(date) => onUpdate({ eventDate: date, eventTime: "" })}
-          />
-          {errors.eventDate && <p className="text-red-400 text-xs mt-1">{errors.eventDate}</p>}
-        </div>
-
-        <div>
-          <label className="block text-xs uppercase tracking-widest text-brand-text-muted font-semibold mb-2">
-            Start Time *
-          </label>
-          <div className="bg-brand-dark-surface border border-brand-border-subtle rounded-md p-3 min-h-[50px]">
-            {!formState.eventDate ? (
-              <p className="text-brand-text-muted text-sm text-center py-2">Select a date first</p>
-            ) : availLoading ? (
-              <div className="flex items-center justify-center py-2 gap-2">
-                <svg className="w-4 h-4 animate-spin text-brand-red" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                <span className="text-brand-text-muted text-xs">Checking availability…</span>
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-1 max-h-56 overflow-y-auto pr-1">
-                {ALL_SLOTS.map((slot) => {
-                  const blocked = allBlockedSlots.has(slot.value);
-                  const selected = formState.eventTime === slot.value;
-                  return (
-                    <button
-                      key={slot.value}
-                      type="button"
-                      disabled={blocked}
-                      onClick={() => !blocked && onUpdate({ eventTime: slot.value })}
-                      className={[
-                        "text-xs rounded px-1 py-1.5 text-center transition-colors duration-150",
-                        blocked
-                          ? "opacity-25 cursor-not-allowed line-through text-brand-text-muted"
-                          : selected
-                          ? "bg-brand-red text-white font-semibold"
-                          : "text-brand-text hover:bg-brand-red/20 hover:text-brand-text cursor-pointer",
-                      ].join(" ")}
-                    >
-                      {slot.label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+      {/* ── Pre-filled info from Step 0 (read-only) ── */}
+      <div className="v8-card p-5">
+        <p className="text-xs uppercase tracking-widest text-brand-text-muted font-semibold mb-4">Your Event Info</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+          <div>
+            <p className="text-brand-text-muted text-xs mb-0.5">Full Name</p>
+            <p className="text-brand-text font-medium">{formState.fullName || "—"}</p>
           </div>
-          {errors.eventTime && <p className="text-red-400 text-xs mt-1">{errors.eventTime}</p>}
-          {formState.eventDate && !availLoading && availability && (
-            <p className="text-brand-text-muted text-xs mt-1">
-              Grayed slots are unavailable or conflict with existing bookings
-              {availability.travelBufferHours > 0 && ` (incl. ${availability.travelBufferHours}h travel buffer)`}.
-            </p>
-          )}
+          <div>
+            <p className="text-brand-text-muted text-xs mb-0.5">Email</p>
+            <p className="text-brand-text font-medium">{formState.email || "—"}</p>
+          </div>
+          <div>
+            <p className="text-brand-text-muted text-xs mb-0.5">Event Type</p>
+            <p className="text-brand-text font-medium">{formState.eventType || "—"}</p>
+          </div>
+          <div>
+            <p className="text-brand-text-muted text-xs mb-0.5">Date</p>
+            <p className="text-brand-text font-medium">{formatDisplayDate(formState.eventDate)}</p>
+          </div>
+          <div>
+            <p className="text-brand-text-muted text-xs mb-0.5">Start Time</p>
+            <p className="text-brand-text font-medium">{formatDisplayTime(formState.eventTime)}</p>
+          </div>
         </div>
       </div>
 
-      {/* Client info */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* ── Editable fields ── */}
+      <div className="space-y-4">
+        {/* Phone */}
         <div>
-          <label className="block text-xs uppercase tracking-widest text-brand-text-muted font-semibold mb-2">
-            Full Name *
-          </label>
-          <input type="text" placeholder="John Smith" className="v8-input" {...field("fullName")} />
-          {errors.fullName && <p className="text-red-400 text-xs mt-1">{errors.fullName}</p>}
-        </div>
-        <div>
-          <label className="block text-xs uppercase tracking-widest text-brand-text-muted font-semibold mb-2">
-            Email *
-          </label>
-          <input type="email" placeholder="you@example.com" className="v8-input" {...field("email")} />
-          {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
-        </div>
-        <div className="sm:col-span-2">
           <label className="block text-xs uppercase tracking-widest text-brand-text-muted font-semibold mb-2">
             Phone *
           </label>
           <input type="tel" placeholder="(203) 555-0100" className="v8-input" {...field("phone")} />
           {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone}</p>}
         </div>
-      </div>
 
-      {/* Address */}
-      <div className="space-y-4">
+        {/* Expected guests */}
+        <div>
+          <label className="block text-xs uppercase tracking-widest text-brand-text-muted font-semibold mb-2">
+            Expected Number of Guests *
+          </label>
+          <input
+            type="number"
+            min="1"
+            max="500"
+            placeholder="e.g. 25"
+            className="v8-input"
+            value={formState.expectedGuests}
+            onChange={(e) => onUpdate({ expectedGuests: e.target.value })}
+          />
+        </div>
+
+        {/* Address */}
         <div>
           <label className="block text-xs uppercase tracking-widest text-brand-text-muted font-semibold mb-2">
             Street Address *
@@ -259,6 +132,7 @@ export default function Step3Details({ formState, durationHours, onUpdate, onNex
           />
           {errors.address && <p className="text-red-400 text-xs mt-1">{errors.address}</p>}
         </div>
+
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <div className="col-span-2 sm:col-span-1">
             <label className="block text-xs uppercase tracking-widest text-brand-text-muted font-semibold mb-2">
@@ -281,20 +155,20 @@ export default function Step3Details({ formState, durationHours, onUpdate, onNex
             {errors.zip && <p className="text-red-400 text-xs mt-1">{errors.zip}</p>}
           </div>
         </div>
-      </div>
 
-      {/* Notes */}
-      <div>
-        <label className="block text-xs uppercase tracking-widest text-brand-text-muted font-semibold mb-2">
-          Additional Notes (optional)
-        </label>
-        <textarea
-          rows={3}
-          placeholder="Parking instructions, gate codes, special requests..."
-          className="v8-input resize-none"
-          value={formState.clientNotes}
-          onChange={(e) => onUpdate({ clientNotes: e.target.value })}
-        />
+        {/* Notes */}
+        <div>
+          <label className="block text-xs uppercase tracking-widest text-brand-text-muted font-semibold mb-2">
+            Additional Notes (optional)
+          </label>
+          <textarea
+            rows={3}
+            placeholder="Parking instructions, gate codes, special requests..."
+            className="v8-input resize-none"
+            value={formState.clientNotes}
+            onChange={(e) => onUpdate({ clientNotes: e.target.value })}
+          />
+        </div>
       </div>
 
       {/* Space Requirements Notice */}
@@ -355,8 +229,9 @@ export default function Step3Details({ formState, durationHours, onUpdate, onNex
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 pt-2">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
         <button onClick={onBack} className="btn-v8 w-full sm:w-auto">← Back</button>
+        <button onClick={onSave} type="button" className="btn-v8 w-full sm:w-auto sm:mx-auto">Save for Later</button>
         <button onClick={handleNext} className="btn-v8-red w-full sm:w-auto">Continue to Payment →</button>
       </div>
     </div>

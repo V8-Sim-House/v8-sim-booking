@@ -10,7 +10,7 @@ export async function GET() {
     db
       .from("sim_bookings")
       .select("event_date, event_time, duration_hours, status")
-      .in("status", ["pending", "approved"]),
+      .eq("status", "approved"),
     db.from("sim_pricing_config").select("travel_buffer_hours").limit(1).single(),
   ]);
 
@@ -23,5 +23,7 @@ export async function GET() {
 
   const travelBufferHours: number = configRes.data?.travel_buffer_hours ?? 1;
 
-  return NextResponse.json({ bookings, travelBufferHours });
+  return NextResponse.json({ bookings, travelBufferHours }, {
+    headers: { "Cache-Control": "no-store" },
+  });
 }

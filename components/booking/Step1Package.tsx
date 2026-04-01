@@ -7,11 +7,14 @@ interface Props {
   packages: SimPackage[];
   config: SimPricingConfig;
   formState: BookingFormState;
+  leadId: string | null;
   onUpdate: (updates: Partial<BookingFormState>) => void;
   onNext: () => void;
+  onBack: () => void;
+  onSave: () => void;
 }
 
-export default function Step1Package({ packages, config, formState, onUpdate, onNext }: Props) {
+export default function Step1Package({ packages, config, formState, leadId, onUpdate, onNext, onBack, onSave }: Props) {
   const [customHours, setCustomHours] = useState(formState.customHours || 2);
 
   const handleSelectPackage = (pkg: SimPackage) => {
@@ -156,7 +159,9 @@ export default function Step1Package({ packages, config, formState, onUpdate, on
         </div>
       </div>
 
-      <div className="pt-2">
+      <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <button onClick={onBack} type="button" className="btn-v8 w-full sm:w-auto">← Back</button>
+        <button onClick={onSave} type="button" className="btn-v8 w-full sm:w-auto sm:mx-auto">Save for Later</button>
         <button
           onClick={onNext}
           disabled={!canContinue}

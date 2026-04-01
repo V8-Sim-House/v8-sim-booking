@@ -17,6 +17,8 @@ interface BookingEmailData {
   subtotal: number;
   depositAmount: number;
   remainderAmount: number;
+  eventType?: string | null;
+  expectedGuests?: number | null;
 }
 
 function formatCurrency(amount: number) {
@@ -73,6 +75,8 @@ export async function sendBookingSubmittedClient(data: BookingEmailData) {
         <div class="value">#${data.bookingId.slice(0, 8).toUpperCase()}</div>
         <div class="label">Event Date</div>
         <div class="value">${data.eventDate} at ${data.eventTime}</div>
+        ${data.eventType ? `<div class="label">Event Type</div><div class="value">${data.eventType}</div>` : ""}
+        ${data.expectedGuests ? `<div class="label">Expected Guests</div><div class="value">${data.expectedGuests}</div>` : ""}
         <div class="label">Package</div>
         <div class="value">${data.packageLabel}</div>
         <div class="label">Deposit (held on card)</div>
@@ -99,6 +103,8 @@ export async function sendBookingSubmittedAdmin(data: BookingEmailData) {
         <div class="value">#${data.bookingId.slice(0, 8).toUpperCase()}</div>
         <div class="label">Event Date</div>
         <div class="value">${data.eventDate} at ${data.eventTime}</div>
+        ${data.eventType ? `<div class="label">Event Type</div><div class="value">${data.eventType}</div>` : ""}
+        ${data.expectedGuests ? `<div class="label">Expected Guests</div><div class="value">${data.expectedGuests}</div>` : ""}
         <div class="label">Package</div>
         <div class="value">${data.packageLabel}</div>
         <div class="label">Total / Deposit</div>
@@ -122,6 +128,8 @@ export async function sendBookingApproved(data: BookingEmailData) {
         <hr class="divider">
         <div class="label">Event Date</div>
         <div class="value">${data.eventDate} at ${data.eventTime}</div>
+        ${data.eventType ? `<div class="label">Event Type</div><div class="value">${data.eventType}</div>` : ""}
+        ${data.expectedGuests ? `<div class="label">Expected Guests</div><div class="value">${data.expectedGuests}</div>` : ""}
         <div class="label">Package</div>
         <div class="value">${data.packageLabel}</div>
         <div class="label">Deposit Charged</div>
@@ -167,6 +175,226 @@ export async function sendBookingCancelled(data: Pick<BookingEmailData, "clientN
     ),
   });
 }
+
+// ─── Lead capture emails ──────────────────────────────────────────────────────
+
+const PACKAGE_TABLE = `
+<table style="width:100%;border-collapse:collapse;margin:12px 0;">
+  <thead>
+    <tr style="border-bottom:1px solid #2a2a2a;">
+      <th style="text-align:left;padding:8px 4px;color:#666;font-size:11px;text-transform:uppercase;letter-spacing:1px;">Package</th>
+      <th style="text-align:left;padding:8px 4px;color:#666;font-size:11px;text-transform:uppercase;letter-spacing:1px;">Duration</th>
+      <th style="text-align:right;padding:8px 4px;color:#666;font-size:11px;text-transform:uppercase;letter-spacing:1px;">Price</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr style="border-bottom:1px solid #222;">
+      <td style="padding:10px 4px;color:#ddd;">1 Hour</td>
+      <td style="padding:10px 4px;color:#aaa;">1 hr</td>
+      <td style="padding:10px 4px;color:#ddd;text-align:right;font-weight:600;">$300</td>
+    </tr>
+    <tr style="border-bottom:1px solid #222;">
+      <td style="padding:10px 4px;color:#ddd;">2 Hour <span style="background:#d32027;color:#fff;font-size:10px;padding:1px 6px;border-radius:99px;font-weight:700;vertical-align:middle;">Popular</span></td>
+      <td style="padding:10px 4px;color:#aaa;">2 hrs</td>
+      <td style="padding:10px 4px;color:#ddd;text-align:right;font-weight:600;">$460</td>
+    </tr>
+    <tr style="border-bottom:1px solid #222;">
+      <td style="padding:10px 4px;color:#ddd;">3 Hour</td>
+      <td style="padding:10px 4px;color:#aaa;">3 hrs</td>
+      <td style="padding:10px 4px;color:#ddd;text-align:right;font-weight:600;">$610</td>
+    </tr>
+    <tr>
+      <td style="padding:10px 4px;color:#ddd;">Custom</td>
+      <td style="padding:10px 4px;color:#aaa;">You choose</td>
+      <td style="padding:10px 4px;color:#ddd;text-align:right;font-weight:600;">$200/hr + $100 setup</td>
+    </tr>
+  </tbody>
+</table>`;
+
+function buildAddonsList(addons?: Array<{ label: string; price: number; is_per_hour: boolean }>) {
+  const items = addons && addons.length > 0
+    ? addons.map((a) =>
+        `<li>${a.label} — ${a.is_per_hour ? `$${a.price}/hr` : `$${a.price}`}</li>`
+      ).join("")
+    : `<li>Extra VR Headset — $50</li><li>Generator Rental (no power outlet needed) — $100</li>`;
+  return `<ul style="margin:8px 0 0;padding-left:20px;color:#aaa;line-height:2;">${items}</ul>`;
+}
+
+const WHATS_INCLUDED = `
+<ul style="margin:8px 0 0;padding-left:0;list-style:none;color:#aaa;line-height:2;">
+  <li>&#10003; Professional simulator delivered &amp; set up at your location</li>
+  <li>&#10003; Trained operator present throughout the entire event</li>
+  <li>&#10003; Live leaderboard &amp; competitive race format</li>
+  <li>&#10003; Full teardown and removal after your event</li>
+</ul>
+<p style="color:#aaa;margin:8px 0 0;font-size:13px;">Space Required: 22ft &times; 12ft clear area, 10ft ceiling height</p>`;
+
+function formatEventDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString("en-US", {
+    weekday: "long", year: "numeric", month: "long", day: "numeric",
+  });
+}
+
+const PACKAGE_DISPLAY: Record<string, { label: string; price: string; deposit: string }> = {
+  standard_1h: { label: "1 Hour Package", price: "$300", deposit: "$90" },
+  standard_2h: { label: "2 Hour Package", price: "$460", deposit: "$138" },
+  standard_3h: { label: "3 Hour Package", price: "$610", deposit: "$183" },
+  custom: { label: "Custom Package", price: "$200/hr + $100 setup", deposit: "30% of total" },
+};
+
+export async function sendLeadPricingSummary(data: {
+  firstName: string;
+  email: string;
+  eventType: string;
+  eventDate: string;
+  leadId: string;
+  addons?: Array<{ label: string; price: number; is_per_hour: boolean }>;
+}) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://book.v8simhouse.com";
+  const displayDate = formatEventDate(data.eventDate);
+  const resumeUrl = `${appUrl}/book?lead=${data.leadId}`;
+
+  return getResend().emails.send({
+    from: FROM,
+    to: data.email,
+    subject: `Your V8 Sim Pricing & Availability — ${displayDate}`,
+    html: baseTemplate(
+      "Your V8 Sim Pricing &amp; Availability",
+      `<div class="card">
+        <p>Hi ${data.firstName},</p>
+        <p>Thanks for your interest in V8 Sim House! Here&rsquo;s everything you need to know about bringing the racing experience to your event.</p>
+        <hr class="divider">
+        <div class="label">Event Type</div>
+        <div class="value">${data.eventType}</div>
+        <div class="label">Event Date</div>
+        <div class="value">${displayDate}</div>
+        <hr class="divider">
+        <p style="color:#666;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Our Packages</p>
+        ${PACKAGE_TABLE}
+        <hr class="divider">
+        <p style="color:#666;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Optional Add-Ons</p>
+        ${buildAddonsList(data.addons)}
+        <hr class="divider">
+        <p style="color:#666;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">How Payment Works</p>
+        <ul style="margin:0;padding-left:20px;color:#aaa;line-height:2;">
+          <li>30% deposit due at booking confirmation (non-refundable)</li>
+          <li>70% balance automatically charged on your event day</li>
+          <li>$300 refundable damage deposit collected on arrival</li>
+        </ul>
+        <hr class="divider">
+        <p style="color:#666;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">What&rsquo;s Included</p>
+        ${WHATS_INCLUDED}
+        <hr class="divider">
+        <p style="color:#aaa;font-size:13px;margin:0;">Ready when you are &mdash; your date is not reserved until a booking is confirmed.</p>
+        <a href="${resumeUrl}" class="btn">Complete My Booking &rarr;</a>
+      </div>`
+    ),
+  });
+}
+
+export async function sendSaveForLaterEmail(data: {
+  firstName: string;
+  email: string;
+  leadId: string;
+}) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://book.v8simhouse.com";
+  const resumeUrl = `${appUrl}/book?lead=${data.leadId}`;
+
+  return getResend().emails.send({
+    from: FROM,
+    to: data.email,
+    subject: "Your V8 Sim booking progress has been saved",
+    html: baseTemplate(
+      "Your progress is saved!",
+      `<div class="card">
+        <p>Hi ${data.firstName},</p>
+        <p>We&rsquo;ve saved your booking progress. Click the button below whenever you&rsquo;re ready to pick up right where you left off &mdash; works on any device.</p>
+        <a href="${resumeUrl}" class="btn">Continue My Booking &rarr;</a>
+        <hr class="divider">
+        <p style="color:#555;font-size:12px;">Questions? Reach us at <a href="mailto:support@v8simhouse.com" style="color:#d32027;">support@v8simhouse.com</a></p>
+      </div>`
+    ),
+  });
+}
+
+export async function sendLeadReminder3Week(data: {
+  firstName: string;
+  email: string;
+  eventType: string;
+  eventDate: string;
+  selectedPackage: string | null;
+  leadId: string;
+}) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://book.v8simhouse.com";
+  const displayDate = formatEventDate(data.eventDate);
+  const resumeUrl = `${appUrl}/book?lead=${data.leadId}`;
+  const pkg = data.selectedPackage ? PACKAGE_DISPLAY[data.selectedPackage] : null;
+
+  const pricingBlock = pkg
+    ? `<div style="background:#111;border:1px solid #2a2a2a;border-radius:6px;padding:16px;margin:16px 0;">
+        <div class="label">Selected Package</div>
+        <div class="value">${pkg.label} — ${pkg.price}</div>
+        <div class="label">Deposit to secure your date</div>
+        <div class="value">${pkg.deposit}</div>
+      </div>`
+    : `<div style="background:#111;border:1px solid #2a2a2a;border-radius:6px;padding:16px;margin:16px 0;">
+        ${PACKAGE_TABLE}
+      </div>`;
+
+  return getResend().emails.send({
+    from: FROM,
+    to: data.email,
+    subject: `Your event is 3 weeks away — is your entertainment sorted? 🏎️`,
+    html: baseTemplate(
+      "3 Weeks to Go!",
+      `<div class="card">
+        <p>Hi ${data.firstName},</p>
+        <p>Your <strong>${data.eventType}</strong> is coming up on <strong>${displayDate}</strong> &mdash; just 3 weeks away!</p>
+        <p>If you&rsquo;ve been thinking about booking the V8 Sim experience, now is the perfect time. Dates fill up fast on weekends, and we want to make sure we can be there for your event.</p>
+        <p style="color:#aaa;">Your pricing is still locked in:</p>
+        ${pricingBlock}
+        <p style="color:#aaa;font-size:13px;">It takes less than 5 minutes to complete your booking &mdash; and your date isn&rsquo;t reserved until it&rsquo;s confirmed.</p>
+        <a href="${resumeUrl}" class="btn">Secure My Date Now &rarr;</a>
+        <hr class="divider">
+        <p style="color:#555;font-size:12px;">See you at the finish line &mdash; The V8 Sim House Team</p>
+      </div>`
+    ),
+  });
+}
+
+export async function sendLeadReminder1Week(data: {
+  firstName: string;
+  email: string;
+  eventType: string;
+  eventDate: string;
+  leadId: string;
+}) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://book.v8simhouse.com";
+  const displayDate = formatEventDate(data.eventDate);
+  const resumeUrl = `${appUrl}/book?lead=${data.leadId}`;
+
+  return getResend().emails.send({
+    from: FROM,
+    to: data.email,
+    subject: `One week to go — your date is still open ⚠️`,
+    html: baseTemplate(
+      "One Week Away",
+      `<div class="card">
+        <p>Hi ${data.firstName},</p>
+        <p>Your <strong>${data.eventType}</strong> is one week away on <strong>${displayDate}</strong>.</p>
+        <p>We wanted to reach out one last time &mdash; your date is still available, but we can only hold it for confirmed bookings.</p>
+        <p>If you&rsquo;re ready to make it happen, here&rsquo;s what to do:</p>
+        <a href="${resumeUrl}" class="btn">Complete My Booking in 5 Minutes &rarr;</a>
+        <hr class="divider">
+        <p style="color:#555;font-size:12px;">If your plans changed and you no longer need us, no worries at all &mdash; just ignore this and have a great event either way!</p>
+        <p style="color:#555;font-size:12px;">The V8 Sim House Team &mdash; Connecticut, USA &mdash; support@v8simhouse.com</p>
+      </div>`
+    ),
+  });
+}
+
+// ─── Booking reminder (existing) ─────────────────────────────────────────────
 
 export async function sendEventReminder(data: Pick<BookingEmailData, "clientName" | "clientEmail" | "eventDate" | "eventTime" | "remainderAmount">) {
   return getResend().emails.send({
