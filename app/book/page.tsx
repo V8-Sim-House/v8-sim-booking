@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { calculatePricing } from "@/lib/pricing";
@@ -43,6 +43,14 @@ const INITIAL_STATE: BookingFormState = {
 };
 
 export default function BookPage() {
+  return (
+    <Suspense>
+      <BookPageInner />
+    </Suspense>
+  );
+}
+
+function BookPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState(0);
