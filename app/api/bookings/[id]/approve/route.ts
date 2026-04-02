@@ -61,7 +61,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     // 4. Email client
     const client = booking.clients;
     if (client) {
-      sendBookingApproved({
+      await sendBookingApproved({
         clientName: client.full_name,
         clientEmail: client.email,
         bookingId: params.id,

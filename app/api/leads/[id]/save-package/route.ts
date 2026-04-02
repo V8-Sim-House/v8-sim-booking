@@ -29,21 +29,21 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         .from("sim_addons")
         .select("label, price, is_per_hour")
         .eq("is_active", true);
-      sendLeadPricingSummary({
-        firstName,
-        email: lead.email,
-        eventType: lead.event_type,
-        eventDate: lead.event_date,
-        leadId: params.id,
-        addons: addons ?? undefined,
-      })
-        .then(() => {
-          db.from("sim_leads")
-            .update({ pricing_email_sent_at: new Date().toISOString() })
-            .eq("id", params.id)
-            .then(() => {});
-        })
-        .catch(console.error);
+      try {
+        await sendLeadPricingSummary({
+          firstName,
+          email: lead.email,
+          eventType: lead.event_type,
+          eventDate: lead.event_date,
+          leadId: params.id,
+          addons: addons ?? undefined,
+        });
+        await db.from("sim_leads")
+          .update({ pricing_email_sent_at: new Date().toISOString() })
+          .eq("id", params.id);
+      } catch (emailErr) {
+        console.error("[save-package] email error:", emailErr);
+      }
     }
 
     return NextResponse.json({ success: true });

@@ -52,7 +52,7 @@ export async function POST(req: Request) {
           eventType: booking.event_type ?? null,
           expectedGuests: booking.expected_guests ?? null,
         };
-        Promise.all([
+        await Promise.all([
           sendBookingSubmittedClient(emailData),
           sendBookingSubmittedAdmin(emailData),
         ]).catch(console.error);

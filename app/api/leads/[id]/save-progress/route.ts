@@ -23,7 +23,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       .eq("id", params.id);
 
     const firstName = lead.full_name.split(" ")[0];
-    sendSaveForLaterEmail({ firstName, email: lead.email, leadId: params.id }).catch(console.error);
+    try {
+      await sendSaveForLaterEmail({ firstName, email: lead.email, leadId: params.id });
+    } catch (emailErr) {
+      console.error("[PATCH /api/leads/save-progress] email error:", emailErr);
+    }
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {

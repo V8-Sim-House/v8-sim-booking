@@ -34,7 +34,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
     const client = booking.clients;
     if (client) {
-      sendBookingDeclined({
+      await sendBookingDeclined({
         clientName: client.full_name,
         clientEmail: client.email,
         bookingId: params.id,

@@ -32,7 +32,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
     const client = booking.clients;
     if (client) {
-      sendBookingCancelled({
+      await sendBookingCancelled({
         clientName: client.full_name,
         clientEmail: client.email,
         eventDate: booking.event_date,

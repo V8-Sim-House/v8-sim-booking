@@ -45,19 +45,18 @@ export async function POST(req: Request) {
       .select("label, price, is_per_hour")
       .eq("is_active", true);
 
-    // Send pricing summary email (fire and forget)
     const firstName = full_name.split(" ")[0];
-    sendLeadPricingSummary({
-      firstName, email, eventType: event_type, eventDate: event_date,
-      leadId, addons: addons ?? undefined,
-    })
-      .then(() => {
-        db.from("sim_leads")
-          .update({ pricing_email_sent_at: new Date().toISOString() })
-          .eq("id", leadId)
-          .then(() => {});
-      })
-      .catch(console.error);
+    try {
+      await sendLeadPricingSummary({
+        firstName, email, eventType: event_type, eventDate: event_date,
+        leadId, addons: addons ?? undefined,
+      });
+      await db.from("sim_leads")
+        .update({ pricing_email_sent_at: new Date().toISOString() })
+        .eq("id", leadId);
+    } catch (emailErr) {
+      console.error("[POST /api/leads] email error:", emailErr);
+    }
 
     return NextResponse.json({ leadId });
   } catch (err: unknown) {
