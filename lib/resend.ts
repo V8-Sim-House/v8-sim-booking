@@ -31,31 +31,48 @@ function baseTemplate(title: string, body: string) {
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light">
   <style>
-    body { font-family: 'Raleway', Arial, sans-serif; background: #000; color: #ddd; margin: 0; padding: 0; }
-    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-    .logo { color: #ddd; font-size: 24px; font-weight: 700; margin-bottom: 32px; }
-    .logo span { color: #d32027; }
+    :root { color-scheme: light only; }
+    body { font-family: Arial, sans-serif; background: #000000; color: #dddddd; margin: 0; padding: 0; }
     .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 32px; margin: 24px 0; }
-    h1 { color: #ddd; font-size: 22px; margin: 0 0 16px; }
-    p { color: #aaa; line-height: 1.7; margin: 0 0 12px; }
-    .label { color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
-    .value { color: #ddd; font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+    .label { color: #666666; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+    .value { color: #dddddd; font-size: 16px; font-weight: 600; margin-bottom: 16px; }
     .divider { border: none; border-top: 1px solid #2a2a2a; margin: 20px 0; }
     .highlight { color: #d32027; font-weight: 700; }
-    .btn { display: inline-block; background: #d32027; color: #fff; padding: 14px 32px; border-radius: 999px; text-decoration: none; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-top: 16px; }
-    .footer { margin-top: 40px; color: #444; font-size: 12px; }
+    .btn { display: inline-block; background: #d32027; color: #ffffff !important; padding: 14px 32px; border-radius: 999px; text-decoration: none; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-top: 16px; }
   </style>
 </head>
-<body>
-  <div class="container">
-    <div class="logo">V8 <span>Sim House</span></div>
-    <h1>${title}</h1>
-    ${body}
-    <div class="footer">
-      <p>V8 Sim House LLC &middot; Connecticut, USA &middot; support@v8simhouse.com</p>
-    </div>
-  </div>
+<body bgcolor="#000000" style="margin:0;padding:0;background-color:#000000;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#000000" style="background-color:#000000;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;">
+          <tr>
+            <td style="font-family:Arial,sans-serif;font-size:24px;font-weight:700;color:#dddddd;padding-bottom:32px;">
+              V8 <span style="color:#d32027;">Sim House</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-family:Arial,sans-serif;font-size:22px;font-weight:700;color:#dddddd;padding-bottom:8px;">
+              ${title}
+            </td>
+          </tr>
+          <tr>
+            <td style="font-family:Arial,sans-serif;color:#aaaaaa;">
+              ${body}
+            </td>
+          </tr>
+          <tr>
+            <td style="font-family:Arial,sans-serif;font-size:12px;color:#444444;padding-top:40px;">
+              V8 Sim House LLC &middot; Connecticut, USA &middot; support@v8simhouse.com
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>`;
 }
